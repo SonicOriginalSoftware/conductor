@@ -1,0 +1,9 @@
+syntax = "proto3";
+option go_package = "./generated";
+
+import "nil.proto";
+import "pipeline.proto";
+
+service Server {
+  rpc Finish(PipelineResult) returns (nil) {}
+}

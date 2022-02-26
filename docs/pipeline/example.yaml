@@ -1,0 +1,63 @@
+# An example pipeline file
+
+- events:
+    - post_receive:
+        branches: ["production"]
+
+- env:
+    FOO: "BAR"
+
+# build_for_linux and build_for_windows will be executed in parallel, first.
+# Then the test_for_linux job will be run if those are successful.
+# Then the deploy job, if test is successful.
+# The notify job will run last, regardless of all previous job outcomes.
+
+- jobs:
+    - build_for_linux:
+        resources: ["shared/image.png"]
+        attributes:
+          shell: "posix"
+          os: "linux"
+          arch: "x86_64"
+        script: scripts/build.sh
+        artifacts:
+          build: "path-to-build-folder"
+
+    - build_for_windows:
+        resources: ["shared/image.png"]
+        attributes:
+          shell: "powershell"
+          os: "windows"
+          arch: "x86_64"
+        script: scripts/build.ps1
+
+    - test_for_linux:
+        parallel: false
+        resources: []
+        env:
+          ENV: "TEST"
+        attributes:
+          shell: "posix"
+          os: "linux"
+          arch: "x86_64"
+        script: scripts/test.sh
+
+    - deploy:
+        parallel: false
+        resources: []
+        env:
+          ENV: "DEPLOY"
+        attributes:
+          shell: "posix"
+          os: "any"
+          arch: "x86_64"
+        script: scripts/deploy.sh
+
+    - notify:
+        parallel: false
+        if: always()
+        attributes:
+          shell: "posix"
+          os: "any"
+          arch: "x86_64"
+        script: notify.sh

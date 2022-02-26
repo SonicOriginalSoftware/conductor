@@ -1,0 +1,11 @@
+syntax = "proto3";
+option go_package = "./generated";
+
+import "nil.proto";
+import "job.proto";
+import "pipeline.proto";
+
+service Queue {
+  rpc Push(Pipeline) returns (nil) {}
+  rpc Finish(JobResult) returns (nil) {}
+}

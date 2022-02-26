@@ -1,0 +1,42 @@
+syntax = "proto3";
+option go_package = "./generated";
+
+message Job {
+  string command = 1;
+
+  repeated string env = 2;
+  repeated string resources = 3;
+
+  string if = 5;
+  bool parallel = 6;
+
+  message Attributes {
+    enum Platform {
+      _platform = 0; // works for any platform
+      windows = 1;
+      macos = 2;
+      linux = 3;
+    }
+
+    enum Arch {
+      option allow_alias = true;
+      x86 = 0;
+      x86_64 = 1;
+      x64 = 1;
+      arm64 = 2;
+    }
+
+    enum LibC {
+      _libc = 0; // works for any libc
+      musl = 1;
+      msvc = 2;
+      glibc = 3;
+    }
+
+    Platform platform = 1;
+    Arch arch = 2;
+    LibC libc = 3;
+  }
+}
+
+message JobResult {}

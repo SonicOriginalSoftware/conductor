@@ -1,0 +1,15 @@
+syntax = "proto3";
+option go_package = "./generated";
+
+import "job.proto";
+
+message Pipeline {
+  repeated string events = 1;
+
+  repeated string env = 2;
+  repeated string resources = 3;
+
+  repeated Job jobs = 10;
+}
+
+message PipelineResult {}
