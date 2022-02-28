@@ -1,7 +1,8 @@
-.PHONY: runner clean-runner
+.PHONY: runner clean-runner test-runner
 
 OUT_DIR := out
 
+TESTS_DIR := tests
 RUNNER_DIR := runner
 RUNNER_BIN_DIR := bin
 RUNNER_MAIN_FILE := $(RUNNER_DIR)/$(RUNNER_BIN_DIR)/main.go
@@ -12,6 +13,9 @@ $(RUNNER_TARGET): FORCE
 	go build -o $(RUNNER_TARGET) $(RUNNER_MAIN_FILE)
 
 runner: $(RUNNER_TARGET)
+
+test-runner:
+	@go test ./$(RUNNER_DIR)/$(TESTS_DIR)
 
 clean-runner:
 	-rm $(RUNNER_TARGET)
