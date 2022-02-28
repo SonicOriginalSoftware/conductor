@@ -22,6 +22,7 @@ const (
 type Service struct {
 	generated.UnimplementedRunnerServer
 	generated.RunnerStatus
+	info generated.RunnerInfo
 
 	jobCancelToken chan bool
 }
@@ -32,23 +33,25 @@ func (service *Service) report(result *generated.JobResult) {
 	service.jobCancelToken = nil
 }
 
-func (service *Service) runCommands(commands []*generated.Command, env []string) (result *generated.JobResult) {
+func (service *Service) runCommands(commands []*generated.Command, env []string) (jobResult *generated.JobResult) {
 	service.jobCancelToken = make(chan bool, 1)
 	defer close(service.jobCancelToken)
 
-	result.Code = notStarted
-	result.Message = "Job has not been started"
-
 	workingDirectory := ""
+	jobCancelled := false
 
 	for _, eachCommand := range commands {
+		result := &generated.CommandResult{
+			Code:    notStarted,
+			Message: "Job has not been started",
+			// FIXME cmd stderr and stdout need to be appended to files in the working directory
+			// stdout and stderr will be appended as each successive command is executed
+		}
+
 		service.CurrentCommandName = eachCommand.Name
 		cmd := exec.Command(eachCommand.Command)
 		cmd.Env = env
 		cmd.Dir = workingDirectory
-
-		// FIXME cmd stderr and stdout need to be appended to files in the working directory
-		// stdout and stderr will be appended as each successive command is executed
 
 		runError := make(chan error)
 		defer close(runError)
@@ -63,9 +66,13 @@ func (service *Service) runCommands(commands []*generated.Command, env []string)
 				result.Code = errored
 				result.Message = err.Error()
 			}
-		case <-service.jobCancelToken:
+		case jobCancelled = <-service.jobCancelToken:
 			result.Code = cancelled
 			result.Message = "Job was cancelled"
+		}
+
+		jobResult.Results = append(jobResult.Results, result)
+		if jobCancelled {
 			return
 		}
 	}
@@ -108,29 +115,38 @@ func (service *Service) Status(context.Context, *generated.Nil) (status *generat
 
 // Info about the Runner
 func (service *Service) Info(context.Context, *generated.Nil) (info *generated.RunnerInfo, err error) {
-	arch, found := generated.Attributes_Arch_value[runtime.GOARCH]
-	if !found {
-		return info, fmt.Errorf("Could not obtain Runner Arch")
-	}
-	info.Attributes.Arch = generated.Attributes_Arch(arch)
-
-	platform, found := generated.Attributes_Platform_value[runtime.GOOS]
-	if !found {
-		return info, fmt.Errorf("Could not obtain Runner Platform")
-	}
-	info.Attributes.Platform = generated.Attributes_Platform(platform)
-
-	if runtime.GOOS == "windows" {
-		info.Attributes.Libc = generated.Attributes_msvc
-	} else {
-		// FIXME Don't assume glibc - check for musl
-		info.Attributes.Libc = generated.Attributes_glibc
-	}
-
-	return
+	return &service.info, err
 }
 
 // NewService returns a new Service
-func NewService() *Service {
-	return &Service{}
+func NewService() (service *Service, err error) {
+	service = &Service{
+		info: generated.RunnerInfo{
+			Attributes: &generated.Attributes{},
+		},
+	}
+
+	arch, found := generated.Attributes_Arch_value[runtime.GOARCH]
+	if !found {
+		return service, fmt.Errorf("Could not obtain Runner Arch")
+	}
+	service.info.Attributes.Arch = generated.Attributes_Arch(arch)
+
+	platform, found := generated.Attributes_Platform_value[runtime.GOOS]
+	if !found {
+		return service, fmt.Errorf("Could not obtain Runner Platform")
+	}
+	service.info.Attributes.Platform = generated.Attributes_Platform(platform)
+
+	switch runtime.GOOS {
+	case "windows":
+		service.info.Attributes.Libc = generated.Attributes_msvc
+	case "darwin":
+		service.info.Attributes.Libc = generated.Attributes_libSystem
+	case "linux":
+		// FIXME Don't assume glibc - check for musl
+		service.info.Attributes.Libc = generated.Attributes_glibc
+	}
+
+	return
 }

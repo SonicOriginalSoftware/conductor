@@ -25,7 +25,13 @@ func init() {
 }
 
 func main() {
-	generated.RegisterRunnerServer(grpcServer, runner.NewService())
+	service, err := runner.NewService()
+	if err != nil {
+		errlog.Fatalf("%v", err)
+		return
+	}
+
+	generated.RegisterRunnerServer(grpcServer, service)
 
 	if err = lib.Main(outlog, errlog, listener, grpcServer); err != nil {
 		errlog.Fatalf("%v", err)

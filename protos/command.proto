@@ -5,3 +5,11 @@ message Command {
   string name = 1;
   string command = 2;
 }
+
+message CommandResult {
+  int64 code = 1;
+  string message = 2;
+
+  string outlog = 3;
+  string errlog = 4;
+}

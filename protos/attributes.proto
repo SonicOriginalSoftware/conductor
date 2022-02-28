@@ -22,7 +22,9 @@ message Attributes {
     _libc = 0; // works for any libc
     musl = 1;
     msvc = 2;
-    glibc = 3;
+    clang = 3;
+    libSystem = 4;
+    glibc = 5;
   }
 
   Platform platform = 1;

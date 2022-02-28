@@ -10,18 +10,15 @@ import (
 )
 
 // Main wraps the main functionality of all servers
-func Main(
-	outlog *log.Logger,
-	errlog *log.Logger,
-	listener net.Listener,
-	grpcServer *grpc.Server,
-) (err error) {
+func Main(outlog *log.Logger, errlog *log.Logger, listener net.Listener, grpcServer *grpc.Server) (err error) {
 	interrupt := make(chan os.Signal, 1)
 	signal.Notify(interrupt, os.Interrupt, os.Kill)
 
 	served := make(chan error, 1)
 	go func() { served <- grpcServer.Serve(listener) }()
 	defer close(served)
+
+	outlog.Printf("Service running: %v", listener.Addr())
 
 	interrupted := false
 	for !interrupted {
