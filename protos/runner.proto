@@ -5,5 +5,12 @@ import "nil.proto";
 import "job.proto";
 
 service Runner {
-  rpc Run(Job) returns (nil) {}
+  rpc Start(Job) returns (nil) {}
+  rpc Stop(nil) returns (nil) {}
+  rpc Status(nil) returns (RunnerStatus) {}
+}
+
+message RunnerStatus {
+  string CurrentJobName = 1;
+  string CurrentCommandName = 2;
 }

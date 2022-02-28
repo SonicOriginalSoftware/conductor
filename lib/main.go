@@ -1,7 +1,6 @@
 package lib
 
 import (
-	"context"
 	"log"
 	"net"
 	"os"
@@ -12,16 +11,13 @@ import (
 
 // Main wraps the main functionality of all servers
 func Main(
-	parentContext context.Context,
 	outlog *log.Logger,
 	errlog *log.Logger,
 	listener net.Listener,
 	grpcServer *grpc.Server,
-	cancel context.CancelFunc,
 ) (err error) {
-	defer cancel()
-
-	interrupt, _ := signal.NotifyContext(parentContext, os.Interrupt, os.Kill)
+	interrupt := make(chan os.Signal, 1)
+	signal.Notify(interrupt, os.Interrupt, os.Kill)
 
 	served := make(chan error, 1)
 	go func() { served <- grpcServer.Serve(listener) }()
@@ -32,7 +28,7 @@ func Main(
 		select {
 		case err = <-served:
 			outlog.Printf("Server stopped: %v\n", err)
-		case done := <-interrupt.Done():
+		case done := <-interrupt:
 			outlog.Printf("Service stop requested: %v\n", done)
 			outlog.Printf("Gracefully shutting down server...\n")
 			grpcServer.GracefulStop()

@@ -3,41 +3,109 @@ package runner
 import (
 	"conductor/generated"
 	"context"
+	"fmt"
 	"os/exec"
+)
+
+type status = int64
+
+const (
+	cancelled status = iota
+	notStarted
+	running
+	errored
+	awaiting
 )
 
 // Service contains runner service properties
 type Service struct {
-	ctx    *context.Context
-	cancel *context.CancelFunc
-
 	generated.UnimplementedRunnerServer
+	generated.RunnerStatus
+
+	jobCancelToken chan bool
 }
 
-// Run a Job
-func (rs *Service) Run(_ context.Context, job *generated.Job) (*generated.Nil, error) {
+func (service *Service) report(result *generated.JobResult) {
+	// FIXME Implement reporting back to the queue client
+
+	service.jobCancelToken = nil
+}
+
+func (service *Service) runCommands(commands []*generated.Command, env []string) (result *generated.JobResult) {
+	service.jobCancelToken = make(chan bool, 1)
+	defer close(service.jobCancelToken)
+
+	result.Code = notStarted
+	result.Message = "Job has not been started"
+
 	workingDirectory := ""
 
-	cmd := exec.Command(job.Command)
-	cmd.Env = job.Env
-	cmd.Dir = workingDirectory
+	for _, eachCommand := range commands {
+		service.CurrentCommandName = eachCommand.Name
+		cmd := exec.Command(eachCommand.Command)
+		cmd.Env = env
+		cmd.Dir = workingDirectory
 
-	// cmd.Stdout =
-	// cmd.Stderr =
+		// FIXME cmd stderr and stdout need to be appended to files in the working directory
+		// stdout and stderr will be appended as each successive command is executed
 
-	// FIXME execute cmd.Run() in a separate goroutine that creates
-	// a queue client and calls the finish method on it with the
-	// results of the cmd.Run() call
-	return &generated.Nil{}, cmd.Run()
+		runError := make(chan error)
+		defer close(runError)
+		go func() { runError <- cmd.Run() }()
+
+		select {
+		case err := <-runError:
+			if exitError, ok := err.(*exec.ExitError); ok {
+				result.Code = int64(exitError.ExitCode())
+				result.Message = exitError.Error()
+			} else {
+				result.Code = errored
+				result.Message = err.Error()
+			}
+		case <-service.jobCancelToken:
+			result.Code = cancelled
+			result.Message = "Job was cancelled"
+			return
+		}
+	}
+
+	return
+}
+
+// Start a Job
+func (service *Service) Start(_ context.Context, job *generated.Job) (n *generated.Nil, err error) {
+	service.CurrentJobName = job.Name
+
+	if service.jobCancelToken != nil {
+		return n, fmt.Errorf("Runner already running job: %v", job.Name)
+	}
+
+	go func() {
+		result := service.runCommands(job.Commands, job.Env)
+		service.report(result)
+	}()
+	return
+}
+
+// Stop the runner's Job
+func (service *Service) Stop(context.Context, *generated.Nil) (n *generated.Nil, err error) {
+	if service.jobCancelToken == nil {
+		return n, fmt.Errorf("Runner is not currently running a job")
+	}
+
+	service.jobCancelToken <- true
+	return
+}
+
+// Status of the runner's current Job
+func (service *Service) Status(context.Context, *generated.Nil) (status *generated.RunnerStatus, err error) {
+	return &generated.RunnerStatus{
+		CurrentJobName:     service.CurrentJobName,
+		CurrentCommandName: service.CurrentCommandName,
+	}, err
 }
 
 // NewService returns a new Service
-//
-// ctx serves to scope all service requests to the
-// lifetime of the creator of the Service
-func NewService(ctx *context.Context, cancel *context.CancelFunc) *Service {
-	return &Service{
-		ctx:    ctx,
-		cancel: cancel,
-	}
+func NewService() *Service {
+	return &Service{}
 }

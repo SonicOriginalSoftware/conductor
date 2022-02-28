@@ -12,9 +12,9 @@ Configuring runners includes defining network location and attributes for each r
 
 `conductor` `runner`s run individual jobs passed on to it from the `conductor` `server`/`queue`.
 
-# Server
+# `gRPC`
 
-Conductor `queue` sends jobs to a runner through an http server.
+Conductor `queue` sends jobs to a runner through `gRPC`.
 
 ## Endpoints
 

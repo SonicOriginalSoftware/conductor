@@ -1,7 +1,6 @@
 package lib
 
 import (
-	"context"
 	"fmt"
 	"log"
 	"net"
@@ -18,14 +17,10 @@ func Init() (
 	errlog *log.Logger,
 	listener net.Listener,
 	grpcServer *grpc.Server,
-	parentContext context.Context,
-	cancel context.CancelFunc,
 	err error,
 ) {
 	outlog = log.New(os.Stdout, "", log.LstdFlags)
 	errlog = log.New(os.Stderr, "[ERROR] ", log.LstdFlags)
-
-	parentContext, cancel = context.WithCancel(context.Background())
 
 	outlog.Printf("Spinning up service...")
 

@@ -1,14 +1,17 @@
 syntax = "proto3";
 option go_package = "./generated";
 
+import "command.proto";
+
 message Job {
-  string command = 1;
+  repeated Command commands = 1;
 
   repeated string env = 2;
   repeated string resources = 3;
 
   string if = 5;
   bool parallel = 6;
+  string name = 7;
 
   message Attributes {
     enum Platform {
@@ -39,4 +42,10 @@ message Job {
   }
 }
 
-message JobResult {}
+message JobResult {
+  int64 code = 1;
+  string message = 2;
+
+  string outlog = 3;
+  string errlog = 4;
+}

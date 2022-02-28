@@ -1,7 +1,7 @@
 GENERATED_PATH := generated
 PROTO_PATH := protos
 
-PROTO_FILES := nil job pipeline
+PROTO_FILES := nil job pipeline command
 PROTO_SERVICE_FILES := runner queue server
 
 GENERATED_FILES := $(foreach file, \

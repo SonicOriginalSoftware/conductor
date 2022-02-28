@@ -7,9 +7,6 @@ import (
 
 // Service contains queue service properties
 type Service struct {
-	ctx    *context.Context
-	cancel *context.CancelFunc
-
 	generated.UnimplementedServerServer
 }
 
@@ -17,9 +14,14 @@ type Service struct {
 //
 // ctx serves to scope all service requests to the
 // lifetime of the creator of the Service
-func NewService(ctx *context.Context, cancel *context.CancelFunc) *Service {
-	return &Service{
-		ctx:    ctx,
-		cancel: cancel,
-	}
+func NewService() *Service {
+	return &Service{}
+}
+
+// Finish a Pipeline
+func (service *Service) Finish(
+	context.Context,
+	*generated.PipelineResult,
+) (_ *generated.Nil, err error) {
+	return
 }
