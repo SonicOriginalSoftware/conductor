@@ -5,6 +5,7 @@ import (
 	"context"
 	"fmt"
 	"os/exec"
+	"runtime"
 )
 
 type status = int64
@@ -17,7 +18,7 @@ const (
 	awaiting
 )
 
-// Service contains runner service properties
+// Service contains Runner service properties
 type Service struct {
 	generated.UnimplementedRunnerServer
 	generated.RunnerStatus
@@ -87,7 +88,7 @@ func (service *Service) Start(_ context.Context, job *generated.Job) (n *generat
 	return
 }
 
-// Stop the runner's Job
+// Stop the Runner's Job
 func (service *Service) Stop(context.Context, *generated.Nil) (n *generated.Nil, err error) {
 	if service.jobCancelToken == nil {
 		return n, fmt.Errorf("Runner is not currently running a job")
@@ -97,12 +98,36 @@ func (service *Service) Stop(context.Context, *generated.Nil) (n *generated.Nil,
 	return
 }
 
-// Status of the runner's current Job
+// Status of the Runner's current Job
 func (service *Service) Status(context.Context, *generated.Nil) (status *generated.RunnerStatus, err error) {
 	return &generated.RunnerStatus{
 		CurrentJobName:     service.CurrentJobName,
 		CurrentCommandName: service.CurrentCommandName,
 	}, err
+}
+
+// Info about the Runner
+func (service *Service) Info(context.Context, *generated.Nil) (info *generated.RunnerInfo, err error) {
+	arch, found := generated.Attributes_Arch_value[runtime.GOARCH]
+	if !found {
+		return info, fmt.Errorf("Could not obtain Runner Arch")
+	}
+	info.Attributes.Arch = generated.Attributes_Arch(arch)
+
+	platform, found := generated.Attributes_Platform_value[runtime.GOOS]
+	if !found {
+		return info, fmt.Errorf("Could not obtain Runner Platform")
+	}
+	info.Attributes.Platform = generated.Attributes_Platform(platform)
+
+	if runtime.GOOS == "windows" {
+		info.Attributes.Libc = generated.Attributes_msvc
+	} else {
+		// FIXME Don't assume glibc - check for musl
+		info.Attributes.Libc = generated.Attributes_glibc
+	}
+
+	return
 }
 
 // NewService returns a new Service

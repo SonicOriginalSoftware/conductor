@@ -27,16 +27,19 @@ Jobs are executed sequentially, in-parallel. See the `[example.yaml](./example.y
 - `resources`: scripts, artifacts, files to be included in all jobs
 
 - `jobs`: individual task executed on a runner (default occurs in parallel)
-  - `env`: Environment variables usable by this job
+  - `name`: Friendly name of the job to run
   - `if`: Conditional for when to execute this job
-  - `resources`: scripts, artifacts, files to be included (sent along with the pipeline steps) when this job runs (represented as paths)
   - `parallel`: execute other jobs in a parallel fashion, defaults to `true`
+  - `env`: Environment variables usable by this job
+  - `resources`: scripts, artifacts, files to be included (sent along with the pipeline steps) when this job runs (represented as paths)
+  - `artifacts`: map of artifact names and the path of the artifact to be uploaded
   - `attributes`
-    - `OS` (windows, linux, macOS, any)
+    - `platform` (windows, linux, macOS, any)
     - `arch` (x86_64, arm64, etc.)
     - `libc` (msvc, glibc, musl)
-  - `command`: the path to the script file to execute
-  - `artifacts`: map of artifact names and the path of the artifact to be uploaded
+  - `commands`: the path to the script file to execute
+    - `name`: Name identifier for the command for showing the status
+    - `command`: command string to execute (script, CLI function, etc.)
 
     Artifacts are uploaded as a single file if the artifact path is a single file, otherwise they will be archived, compressed, and uploaded.
 

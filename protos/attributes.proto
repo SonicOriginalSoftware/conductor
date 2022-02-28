@@ -1,0 +1,31 @@
+syntax = "proto3";
+option go_package = "./generated";
+
+message Attributes {
+  enum Platform {
+    _platform = 0; // works for any platform
+    windows = 1;
+    darwin = 2;
+    linux = 3;
+  }
+
+  enum Arch {
+    option allow_alias = true;
+    unknown = 0;
+    x86 = 1;
+    x86_64 = 2;
+    x64 = 2;
+    arm64 = 3;
+  }
+
+  enum LibC {
+    _libc = 0; // works for any libc
+    musl = 1;
+    msvc = 2;
+    glibc = 3;
+  }
+
+  Platform platform = 1;
+  Arch arch = 2;
+  LibC libc = 3;
+}

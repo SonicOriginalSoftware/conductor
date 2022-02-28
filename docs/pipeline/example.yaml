@@ -7,57 +7,76 @@
 - env:
     FOO: "BAR"
 
-# build_for_linux and build_for_windows will be executed in parallel, first.
+# Build for Linux and Build and Test for Windows will be executed in parallel, first.
 # Then the test_for_linux job will be run if those are successful.
 # Then the deploy job, if test is successful.
 # The notify job will run last, regardless of all previous job outcomes.
 
 - jobs:
-    - build_for_linux:
-        resources: ["shared/image.png"]
-        attributes:
-          shell: "posix"
-          os: "linux"
-          arch: "x86_64"
-        script: scripts/build.sh
-        artifacts:
-          build: "path-to-build-folder"
+    - name: Build for Linux (x64)
+      resources: ["shared/image.png", "scripts/build.ps1"]
+      attributes:
+        platform: "linux"
+      env:
+        FAZ: "BUZ"
+      commands:
+        - name: Build
+          command: scripts/build.sh
+      artifacts:
+        build: "path-to-build-folder"
 
-    - build_for_windows:
-        resources: ["shared/image.png"]
-        attributes:
-          shell: "powershell"
-          os: "windows"
-          arch: "x86_64"
-        script: scripts/build.ps1
+    - name: Build for Linux (ARM64)
+      resources: ["shared/image.png", "scripts/build.ps1"]
+      attributes:
+        platform: "linux"
+        arch: "arm64"
+      env:
+        FAZ: "BUZ"
+      commands:
+        - name: Build
+          command: scripts/build.sh
+      artifacts:
+        build: "path-to-build-folder"
 
-    - test_for_linux:
-        parallel: false
-        resources: []
-        env:
-          ENV: "TEST"
-        attributes:
-          shell: "posix"
-          os: "linux"
-          arch: "x86_64"
-        script: scripts/test.sh
+    - name: Build and Test for Windows
+      resources: ["shared/image.png", "scripts/build.ps1", "scripts/test.ps1"]
+      attributes:
+        platform: "windows"
+        arch: "x86_64"
+      commands:
+        - name: Build
+          command: scripts/build.ps1
+        - name: Test
+          command: scripts/test.ps1
 
-    - deploy:
-        parallel: false
-        resources: []
-        env:
-          ENV: "DEPLOY"
-        attributes:
-          shell: "posix"
-          os: "any"
-          arch: "x86_64"
-        script: scripts/deploy.sh
+    - name: Test for Linux
+      parallel: false
+      resources: ["scripts/test.sh"]
+      env:
+        ENV: "TEST"
+      attributes:
+        platform: "linux"
+      commands:
+        - name: Test
+          command: scripts/test.sh
 
-    - notify:
-        parallel: false
-        if: always()
-        attributes:
-          shell: "posix"
-          os: "any"
-          arch: "x86_64"
-        script: notify.sh
+    - name: Deploy
+      parallel: false
+      resources: ["scripts/deploy.sh"]
+      env:
+        ENV: "DEPLOY"
+      attributes:
+        platform: "any"
+      commands:
+        - name: Deploy
+          command: scripts/deploy.sh
+
+    - name: Notify
+      if: always()
+      parallel: false
+      resources: ["scripts/notify.sh"]
+      attributes:
+        platform: "any"
+      commands:
+        - name: Notify results to Slack Channel
+          command: scripts/notify.sh

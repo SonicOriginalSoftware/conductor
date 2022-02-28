@@ -2,13 +2,6 @@ syntax = "proto3";
 option go_package = "./generated";
 
 message Command {
-  enum Shell {
-    sh = 0;
-    pwsh = 1;
-  }
-
-  Shell shell = 1;
-
-  string name = 2;
-  string command = 3;
+  string name = 1;
+  string command = 2;
 }

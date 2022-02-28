@@ -2,12 +2,18 @@ syntax = "proto3";
 option go_package = "./generated";
 
 import "nil.proto";
+import "attributes.proto";
 import "job.proto";
 
 service Runner {
   rpc Start(Job) returns (nil) {}
   rpc Stop(nil) returns (nil) {}
   rpc Status(nil) returns (RunnerStatus) {}
+  rpc Info(nil) returns (RunnerInfo) {}
+}
+
+message RunnerInfo {
+  Attributes attributes = 1;
 }
 
 message RunnerStatus {
