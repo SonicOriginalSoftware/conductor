@@ -15,7 +15,7 @@ $(RUNNER_TARGET): FORCE
 runner: $(RUNNER_TARGET)
 
 test-runner:
-	@go test ./$(RUNNER_DIR)/$(TESTS_DIR)
+	@go test -v ./$(RUNNER_DIR)/$(TESTS_DIR)
 
 clean-runner:
 	-rm $(RUNNER_TARGET)

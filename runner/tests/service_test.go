@@ -9,27 +9,26 @@ import (
 
 func TestStartJob(t *testing.T) {
 	testJobName := "Test Job"
-	testJobCommands := []*generated.Command{}
-	testPWDCommand := &generated.Command{
-		Name:    "PWD",
-		Command: "pwd",
+	testJobCommands := []*generated.Command{
+		{
+			Name:    "PWD",
+			Command: "pwd",
+		},
+		{
+			Name:    "Who Am I?",
+			Command: "whoami",
+		},
 	}
-	testWhoAmICommand := &generated.Command{
-		Name:    "Who Am I?",
-		Command: "whoami",
-	}
-	testJobCommands = append(testJobCommands, testPWDCommand, testWhoAmICommand)
-	testJobEnv := []string{"TEST=true", "FOO=BAR"}
-
 	testJob := &generated.Job{
 		Name:     testJobName,
 		Commands: testJobCommands,
-		Env:      testJobEnv,
+		Env:      []string{"TEST=true", "FOO=BAR"},
 	}
 	runner := &runner.Service{}
 
-	_, err := runner.Start(context.Background(), testJob)
-	if err != nil {
+	if _, err := runner.Start(context.Background(), testJob); err != nil {
 		t.Errorf("%v", err)
 	}
+
+	t.Logf("Finished %v", testJobName)
 }
