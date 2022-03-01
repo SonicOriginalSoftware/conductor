@@ -84,11 +84,11 @@ func (service *Service) runCommands(commands []*generated.Command, env []string)
 
 // Start a Job
 func (service *Service) Start(_ context.Context, job *generated.Job) (n *generated.Nil, err error) {
-	service.CurrentJobName = job.Name
-
 	if service.jobCancelToken != nil {
 		return n, fmt.Errorf("Runner already running job: %v", job.Name)
 	}
+
+	service.CurrentJobName = job.Name
 
 	go func() {
 		result := service.runCommands(job.Commands, job.Env)

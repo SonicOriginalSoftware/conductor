@@ -14,8 +14,8 @@ type Service struct {
 //
 // ctx serves to scope all service requests to the
 // lifetime of the creator of the Service
-func NewService() *Service {
-	return &Service{}
+func NewService() (service *Service, err error) {
+	return
 }
 
 // Push a pipeline into the queue
