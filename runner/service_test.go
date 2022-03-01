@@ -66,21 +66,19 @@ func TestRunnerStatusNoJob(t *testing.T) {
 }
 
 func TestStartJob(t *testing.T) {
-	testJobName := "Test Job"
-	testJobCommands := []*generated.Command{
-		{
-			Name:    "PWD",
-			Command: "pwd",
-		},
-		{
-			Name:    "Who Am I?",
-			Command: "whoami",
-		},
-	}
 	testJob := &generated.Job{
-		Name:     testJobName,
-		Commands: testJobCommands,
-		Env:      []string{"TEST=true", "FOO=BAR"},
+		Name: "Test Job",
+		Commands: []*generated.Command{
+			{
+				Name:    "PWD",
+				Command: "pwd",
+			},
+			{
+				Name:    "Who Am I?",
+				Command: "whoami",
+			},
+		},
+		Env: []string{"TEST=true", "FOO=BAR"},
 	}
 
 	runner, err := NewService()
@@ -101,6 +99,60 @@ func TestStopNoJob(t *testing.T) {
 
 	if _, err := runner.Stop(context.Background(), &generated.Nil{}); err == nil {
 		t.Errorf("Runner did not encounter error when trying to stop a job that didn't exist")
+		t.FailNow()
+	}
+}
+
+func TestStartMultipleJobs(t *testing.T) {
+	initialJobName := "Initial Job"
+	initialCommandName := "Sleep"
+	additionalJobName := "Additional Job"
+	additionalCommandName := "PWD"
+
+	testInitialJob := &generated.Job{
+		Name: initialJobName,
+		Commands: []*generated.Command{
+			{
+				Name:    initialCommandName,
+				Command: "sleep 10",
+			},
+		},
+	}
+
+	testAdditionalJob := &generated.Job{
+		Name: additionalJobName,
+		Commands: []*generated.Command{
+			{
+				Name:    additionalCommandName,
+				Command: "pwd",
+			},
+		},
+	}
+
+	runner, err := NewService()
+	if err != nil {
+		t.Errorf("%v", err)
+	}
+
+	if _, err := runner.Start(context.Background(), testInitialJob); err != nil {
+		t.Errorf("Runner could not start the initial test job")
+		t.FailNow()
+	}
+
+	status, err := runner.Status(context.Background(), &generated.Nil{})
+	if err != nil {
+		t.Errorf("Runner could not start the initial test job")
+		t.FailNow()
+	} else if status.CurrentJobName != initialJobName {
+		t.Errorf("Runner not reporting current job is initial job: %v", status.CurrentJobName)
+		t.FailNow()
+	} else if status.CurrentCommandName != initialCommandName {
+		t.Errorf("Runner not reporting current command is initial command: %v", status.CurrentCommandName)
+		t.FailNow()
+	}
+
+	if _, err := runner.Start(context.Background(), testAdditionalJob); err == nil {
+		t.Errorf("Runner was able to start an additional job")
 		t.FailNow()
 	}
 }

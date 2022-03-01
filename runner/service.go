@@ -31,6 +31,8 @@ func (service *Service) report(result *generated.JobResult) {
 	// FIXME Implement reporting back to the queue client
 
 	service.jobCancelToken = nil
+	service.CurrentCommandName = ""
+	service.CurrentJobName = ""
 }
 
 func (service *Service) runCommands(commands []*generated.Command, env []string) (jobResult *generated.JobResult) {
