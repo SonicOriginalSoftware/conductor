@@ -2,7 +2,6 @@
 
 OUT_DIR := out
 
-TESTS_DIR := tests
 RUNNER_DIR := runner
 RUNNER_BIN_DIR := bin
 RUNNER_MAIN_FILE := $(RUNNER_DIR)/$(RUNNER_BIN_DIR)/main.go
@@ -15,7 +14,7 @@ $(RUNNER_TARGET): FORCE
 runner: $(RUNNER_TARGET)
 
 test-runner:
-	@go test -v ./$(RUNNER_DIR)/$(TESTS_DIR)
+	@go test -v ./$(RUNNER_DIR)
 
 clean-runner:
 	-rm $(RUNNER_TARGET)
