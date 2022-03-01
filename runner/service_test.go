@@ -114,7 +114,7 @@ func TestStartMultipleJobs(t *testing.T) {
 		Commands: []*generated.Command{
 			{
 				Name:    initialCommandName,
-				Command: "sleep 10",
+				Command: "sleep 30",
 			},
 		},
 	}
