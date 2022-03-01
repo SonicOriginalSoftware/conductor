@@ -25,7 +25,13 @@ func init() {
 }
 
 func main() {
-	generated.RegisterQueueServer(grpcServer, queue.NewService())
+	service, err := queue.NewService()
+	if err != nil {
+		errlog.Fatalf("%v", err)
+		return
+	}
+
+	generated.RegisterQueueServer(grpcServer, service)
 
 	if err = lib.Main(outlog, errlog, listener, grpcServer); err != nil {
 		errlog.Fatalf("%v", err)

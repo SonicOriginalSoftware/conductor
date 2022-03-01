@@ -8,29 +8,40 @@ import (
 	"testing"
 )
 
+func setupRunnerService(t *testing.T) (service *runner.Service) {
+	service, err := runner.NewService()
+	if err != nil {
+		t.Errorf("Failed to set up Runner Service:\n%v", err)
+	}
+
+	return
+}
+
+func setupQueueService(t *testing.T) (service *queue.Service) {
+	service, err := queue.NewService()
+	if err != nil {
+		t.Errorf("Failed to set up Runner Service:\n%v", err)
+	}
+
+	return
+}
+
 func TestStartJob(t *testing.T) {
-	initialJobName := "Initial Job"
-	initialCommandName := "Initial Command"
+	jobName := "Job"
+	commandName := "PWD"
 
 	initialJob := &generated.Job{
-		Name: initialJobName,
+		Name: jobName,
 		Commands: []*generated.Command{
 			{
-				Name:    initialCommandName,
-				Command: "sleep 30",
+				Name:    commandName,
+				Command: "pwd",
 			},
 		},
 	}
 
-	runner, err := runner.NewService()
-	if err != nil {
-		t.Errorf("%v", err)
-	}
-
-	_, err = queue.NewService()
-	if err != nil {
-		t.Errorf("%v", err)
-	}
+	runner := setupRunnerService(t)
+	_ = setupQueueService(t)
 
 	if _, err := runner.Start(context.Background(), initialJob); err != nil {
 		t.Errorf("%v", err)
@@ -63,15 +74,8 @@ func TestStartMultipleJobs(t *testing.T) {
 		},
 	}
 
-	runner, err := runner.NewService()
-	if err != nil {
-		t.Errorf("%v", err)
-	}
-
-	_, err = queue.NewService()
-	if err != nil {
-		t.Errorf("%v", err)
-	}
+	runner := setupRunnerService(t)
+	_ = setupQueueService(t)
 
 	if _, err := runner.Start(context.Background(), initialJob); err != nil {
 		t.Errorf("%v", err)
