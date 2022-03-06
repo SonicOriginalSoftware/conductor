@@ -2,35 +2,78 @@ package integrationtests
 
 import (
 	"conductor/generated"
+	"conductor/lib"
 	"conductor/queue"
 	"conductor/runner"
 	"context"
+	"os"
 	"testing"
 )
 
-func setupRunnerService(t *testing.T) (service *runner.Service) {
-	service, err := runner.NewService()
+const queuePort = "8080"
+const runnerPort = "8081"
+
+func setupQueueService(t *testing.T) (service *queue.Service, mainErr chan error) {
+	os.Setenv("PORT", queuePort)
+	checkPort, found := os.LookupEnv("PORT")
+	if !found || checkPort != queuePort {
+		t.Fatalf("Queue port could not be set!")
+	}
+
+	outlog, errlog, listener, grpcServer, err := lib.Init()
+	if err != nil {
+		t.Fatalf("%v", err)
+	}
+
+	service, err = queue.NewService()
+	if err != nil {
+		t.Errorf("Failed to set up Queue Service:\n%v", err)
+	}
+
+	generated.RegisterQueueServer(grpcServer, service)
+
+	mainErr = make(chan error)
+	go func() {
+		if err = lib.Main(outlog, errlog, listener, grpcServer); err != nil {
+			mainErr <- err
+		}
+	}()
+	return
+}
+
+func setupRunnerService(t *testing.T) (service *runner.Service, mainErr chan error) {
+	os.Setenv("PORT", runnerPort)
+	checkPort, found := os.LookupEnv("PORT")
+	if !found || checkPort != runnerPort {
+		t.Fatalf("Runner port could not be set!")
+	}
+
+	outlog, errlog, listener, grpcServer, err := lib.Init()
+	if err != nil {
+		t.Fatalf("%v", err)
+	}
+
+	service, err = runner.NewService()
 	if err != nil {
 		t.Errorf("Failed to set up Runner Service:\n%v", err)
 	}
 
+	generated.RegisterRunnerServer(grpcServer, service)
+
+	mainErr = make(chan error)
+	go func() {
+		if err = lib.Main(outlog, errlog, listener, grpcServer); err != nil {
+			mainErr <- err
+		}
+	}()
 	return
 }
 
-func setupQueueService(t *testing.T) (service *queue.Service) {
-	service, err := queue.NewService()
-	if err != nil {
-		t.Errorf("Failed to set up Runner Service:\n%v", err)
-	}
-
-	return
-}
-
-func TestStartJob(t *testing.T) {
+func TestPipelinePushJob(t *testing.T) {
 	jobName := "Job"
 	commandName := "PWD"
 
-	initialJob := &generated.Job{
+	testJob := &generated.Job{
 		Name: jobName,
 		Commands: []*generated.Command{
 			{
@@ -40,21 +83,38 @@ func TestStartJob(t *testing.T) {
 		},
 	}
 
-	runner := setupRunnerService(t)
-	_ = setupQueueService(t)
-
-	if _, err := runner.Start(context.Background(), initialJob); err != nil {
-		t.Errorf("%v", err)
+	testPipeline := &generated.Pipeline{
+		Jobs: []*generated.Job{testJob},
 	}
+
+	queue, queueErr := setupQueueService(t)
+	defer close(queueErr)
+
+	_, runnerErr := setupRunnerService(t)
+	defer close(runnerErr)
+
+	queue.Push(context.Background(), testPipeline)
+
+	select {
+	case err := <-runnerErr:
+		t.Fatalf("%v", err)
+		break
+	case err := <-queueErr:
+		t.Fatalf("%v", err)
+		break
+	}
+
 }
 
-func TestStartMultipleJobs(t *testing.T) {
+func TestPipelinePushJobs(t *testing.T) {
+	t.Skip("Not ready to test multiple jobs yet")
+
 	initialJobName := "Initial Job"
 	initialCommandName := "Initial Command"
 	additionalJobName := "Additional Job"
 	additionalCommandName := "Additional Command"
 
-	initialJob := &generated.Job{
+	_ = &generated.Job{
 		Name: initialJobName,
 		Commands: []*generated.Command{
 			{
@@ -64,7 +124,7 @@ func TestStartMultipleJobs(t *testing.T) {
 		},
 	}
 
-	additionalJob := &generated.Job{
+	_ = &generated.Job{
 		Name: additionalJobName,
 		Commands: []*generated.Command{
 			{
@@ -74,14 +134,6 @@ func TestStartMultipleJobs(t *testing.T) {
 		},
 	}
 
-	runner := setupRunnerService(t)
-	_ = setupQueueService(t)
-
-	if _, err := runner.Start(context.Background(), initialJob); err != nil {
-		t.Errorf("%v", err)
-	}
-
-	if _, err := runner.Start(context.Background(), additionalJob); err != nil {
-		t.Errorf("%v", err)
-	}
+	_, _ = setupRunnerService(t)
+	_, _ = setupQueueService(t)
 }

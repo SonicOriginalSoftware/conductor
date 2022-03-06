@@ -9,8 +9,6 @@ import (
 	"google.golang.org/grpc"
 )
 
-var port = lookupPort()
-
 // Init initializes shared variables among all Services
 func Init() (
 	outlog *log.Logger,
@@ -24,7 +22,7 @@ func Init() (
 
 	outlog.Printf("Spinning up service...")
 
-	listener, err = net.Listen("tcp", fmt.Sprintf(":%v", port))
+	listener, err = net.Listen("tcp", fmt.Sprintf(":%v", lookupPort()))
 	if err != nil {
 		log.Printf("failed to listen: %v", err)
 		return
