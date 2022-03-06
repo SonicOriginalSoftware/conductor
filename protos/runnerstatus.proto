@@ -1,0 +1,7 @@
+syntax = "proto3";
+option go_package = "./generated";
+
+message RunnerStatus {
+  string CurrentJobName = 1;
+  string CurrentCommandName = 2;
+}

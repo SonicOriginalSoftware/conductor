@@ -1,8 +1,5 @@
 .PHONY: queue clean-queue
 
-OUT_DIR := out
-
-QUEUE_DIR := queue
 QUEUE_BIN_DIR := bin
 QUEUE_MAIN_FILE := $(QUEUE_DIR)/$(QUEUE_BIN_DIR)/main.go
 QUEUE_TARGET_FILE := $(QUEUE_DIR)

@@ -4,8 +4,22 @@ option go_package = "./generated";
 import "nil.proto";
 import "job.proto";
 import "pipeline.proto";
+import "queueinfo.proto";
+import "runnerinfo.proto";
+import "runnerstatus.proto";
 
 service Queue {
   rpc Push(Pipeline) returns (nil) {}
   rpc Finish(JobResult) returns (nil) {}
+  rpc Runners(nil) returns (ConfiguredRunners) {}
+  rpc Info(nil) returns (QueueInfo) {}
+}
+
+message ConfiguredRunner {
+  RunnerInfo info = 1;
+  RunnerStatus status = 2;
+}
+
+message ConfiguredRunners {
+  repeated ConfiguredRunner runners = 1;
 }

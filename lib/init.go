@@ -10,7 +10,7 @@ import (
 )
 
 // Init initializes shared variables among all Services
-func Init() (
+func Init(serviceName string) (
 	outlog *log.Logger,
 	errlog *log.Logger,
 	listener net.Listener,
@@ -20,7 +20,7 @@ func Init() (
 	outlog = log.New(os.Stdout, "", log.LstdFlags)
 	errlog = log.New(os.Stderr, "[ERROR] ", log.LstdFlags)
 
-	outlog.Printf("Spinning up service...")
+	outlog.Printf("Spinning up %v...", serviceName)
 
 	listener, err = net.Listen("tcp", fmt.Sprintf(":%v", lookupPort()))
 	if err != nil {

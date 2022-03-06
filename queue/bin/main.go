@@ -19,13 +19,14 @@ var (
 )
 
 func init() {
-	if outlog, errlog, listener, grpcServer, err = lib.Init(); err != nil {
+	if outlog, errlog, listener, grpcServer, err = lib.Init(queue.Name); err != nil {
 		log.Fatalf("%v", err)
 	}
 }
 
 func main() {
-	service, err := queue.NewService()
+	// FIXME Should get runner addresses from a config somewhere?
+	service, err := queue.NewService(listener.Addr().String(), []string{})
 	if err != nil {
 		errlog.Fatalf("%v", err)
 		return
@@ -33,7 +34,7 @@ func main() {
 
 	generated.RegisterQueueServer(grpcServer, service)
 
-	if err = lib.Main(outlog, errlog, listener, grpcServer); err != nil {
+	if err = lib.Main(outlog, errlog, listener, grpcServer, service.Name); err != nil {
 		errlog.Fatalf("%v", err)
 	}
 }

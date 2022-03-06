@@ -1,0 +1,9 @@
+syntax = "proto3";
+option go_package = "./generated";
+
+import "attributes.proto";
+
+message RunnerInfo {
+  Attributes attributes = 1;
+  string address = 2;
+}

@@ -19,15 +19,17 @@ var (
 )
 
 func init() {
-	if outlog, errlog, listener, grpcServer, err = lib.Init(); err != nil {
+	if outlog, errlog, listener, grpcServer, err = lib.Init(server.Name); err != nil {
 		log.Fatalf("%v", err)
 	}
 }
 
 func main() {
-	generated.RegisterServerServer(grpcServer, server.NewService())
+	service := server.NewService()
 
-	if err = lib.Main(outlog, errlog, listener, grpcServer); err != nil {
+	generated.RegisterServerServer(grpcServer, service)
+
+	if err = lib.Main(outlog, errlog, listener, grpcServer, service.Name); err != nil {
 		errlog.Fatalf("%v", err)
 	}
 }

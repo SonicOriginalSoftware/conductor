@@ -20,12 +20,12 @@ func setupQueueService(t *testing.T) (service *queue.Service, mainErr chan error
 		t.Fatalf("Queue port could not be set!")
 	}
 
-	outlog, errlog, listener, grpcServer, err := lib.Init()
+	outlog, errlog, listener, grpcServer, err := lib.Init(queue.Name)
 	if err != nil {
 		t.Fatalf("%v", err)
 	}
 
-	service, err = queue.NewService()
+	service, err = queue.NewService(listener.Addr().String(), []string{})
 	if err != nil {
 		t.Errorf("Failed to set up Queue Service:\n%v", err)
 	}
@@ -34,7 +34,7 @@ func setupQueueService(t *testing.T) (service *queue.Service, mainErr chan error
 
 	mainErr = make(chan error, 1)
 	go func() {
-		if err = lib.Main(outlog, errlog, listener, grpcServer); err != nil {
+		if err = lib.Main(outlog, errlog, listener, grpcServer, service.Name); err != nil {
 			mainErr <- err
 		}
 	}()
@@ -48,12 +48,12 @@ func setupRunnerService(t *testing.T) (service *runner.Service, mainErr chan err
 		t.Fatalf("Runner port could not be set!")
 	}
 
-	outlog, errlog, listener, grpcServer, err := lib.Init()
+	outlog, errlog, listener, grpcServer, err := lib.Init(runner.Name)
 	if err != nil {
 		t.Fatalf("%v", err)
 	}
 
-	service, err = runner.NewService()
+	service, err = runner.NewService(listener.Addr().String())
 	if err != nil {
 		t.Errorf("Failed to set up Runner Service:\n%v", err)
 	}
@@ -62,7 +62,7 @@ func setupRunnerService(t *testing.T) (service *runner.Service, mainErr chan err
 
 	mainErr = make(chan error, 1)
 	go func() {
-		if err = lib.Main(outlog, errlog, listener, grpcServer); err != nil {
+		if err = lib.Main(outlog, errlog, listener, grpcServer, service.Name); err != nil {
 			mainErr <- err
 		}
 	}()
@@ -90,10 +90,20 @@ func TestPipelinePushJob(t *testing.T) {
 	queue, queueErr := setupQueueService(t)
 	defer close(queueErr)
 
-	_, runnerErr := setupRunnerService(t)
+	runner, runnerErr := setupRunnerService(t)
 	defer close(runnerErr)
 
 	queue.Push(context.Background(), testPipeline)
+	t.Logf("Waiting on %v to finish the job...", runner.Name)
+
+	runnerStatus, err := runner.Status(context.Background(), &generated.Nil{})
+	if err != nil {
+		t.Fatalf("Could not retrieve runner status")
+	}
+
+	if runnerStatus.CurrentJobName == "" {
+		t.Fatalf("Runner reported as not having a job")
+	}
 
 	// FIXME What am I waiting on here?
 	select {
@@ -102,6 +112,8 @@ func TestPipelinePushJob(t *testing.T) {
 		break
 	case err := <-queueErr:
 		t.Fatalf("%v", err)
+		break
+	case _ = <-runner.WaitForJob():
 		break
 	}
 

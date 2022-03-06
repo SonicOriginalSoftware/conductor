@@ -19,13 +19,13 @@ var (
 )
 
 func init() {
-	if outlog, errlog, listener, grpcServer, err = lib.Init(); err != nil {
+	if outlog, errlog, listener, grpcServer, err = lib.Init(runner.Name); err != nil {
 		log.Fatalf("%v", err)
 	}
 }
 
 func main() {
-	service, err := runner.NewService()
+	service, err := runner.NewService(listener.Addr().String())
 	if err != nil {
 		errlog.Fatalf("%v", err)
 		return
@@ -33,7 +33,7 @@ func main() {
 
 	generated.RegisterRunnerServer(grpcServer, service)
 
-	if err = lib.Main(outlog, errlog, listener, grpcServer); err != nil {
+	if err = lib.Main(outlog, errlog, listener, grpcServer, service.Name); err != nil {
 		errlog.Fatalf("%v", err)
 	}
 }

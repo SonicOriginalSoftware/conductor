@@ -1,8 +1,5 @@
 .PHONY: runner clean-runner test-runner
 
-OUT_DIR := out
-
-RUNNER_DIR := runner
 RUNNER_BIN_DIR := bin
 RUNNER_MAIN_FILE := $(RUNNER_DIR)/$(RUNNER_BIN_DIR)/main.go
 RUNNER_TARGET_FILE := $(RUNNER_DIR)

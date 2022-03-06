@@ -10,6 +10,9 @@ import (
 
 type status = int64
 
+// Name is the name of the service
+const Name = "Runner"
+
 const (
 	cancelled status = iota
 	notStarted
@@ -21,8 +24,10 @@ const (
 // Service contains Runner service properties
 type Service struct {
 	generated.UnimplementedRunnerServer
-	generated.RunnerStatus
-	info generated.RunnerInfo
+	status generated.RunnerStatus
+	info   generated.RunnerInfo
+
+	Name string
 
 	jobCancelToken chan bool
 }
@@ -31,11 +36,14 @@ func (service *Service) report(result *generated.JobResult) {
 	// FIXME Implement reporting back to the queue client
 
 	service.jobCancelToken = nil
-	service.CurrentCommandName = ""
-	service.CurrentJobName = ""
+	service.status.CurrentCommandName = ""
+	service.status.CurrentJobName = ""
 }
 
-func (service *Service) runCommands(commands []*generated.Command, env []string) (jobResult *generated.JobResult) {
+func (service *Service) runCommands(
+	commands []*generated.Command,
+	env []string,
+) (jobResult *generated.JobResult) {
 	service.jobCancelToken = make(chan bool, 1)
 	defer close(service.jobCancelToken)
 
@@ -50,7 +58,7 @@ func (service *Service) runCommands(commands []*generated.Command, env []string)
 			// stdout and stderr will be appended as each successive command is executed
 		}
 
-		service.CurrentCommandName = eachCommand.Name
+		service.status.CurrentCommandName = eachCommand.Name
 		cmd := exec.Command(eachCommand.Command)
 		cmd.Env = env
 		cmd.Dir = workingDirectory
@@ -83,12 +91,15 @@ func (service *Service) runCommands(commands []*generated.Command, env []string)
 }
 
 // Start a Job
-func (service *Service) Start(_ context.Context, job *generated.Job) (n *generated.Nil, err error) {
+func (service *Service) Start(
+	_ context.Context,
+	job *generated.Job,
+) (n *generated.Nil, err error) {
 	if service.jobCancelToken != nil {
 		return n, fmt.Errorf("Runner already running job: %v", job.Name)
 	}
 
-	service.CurrentJobName = job.Name
+	service.status.CurrentJobName = job.Name
 
 	go func() {
 		result := service.runCommands(job.Commands, job.Env)
@@ -98,7 +109,10 @@ func (service *Service) Start(_ context.Context, job *generated.Job) (n *generat
 }
 
 // Stop the Runner's Job
-func (service *Service) Stop(context.Context, *generated.Nil) (n *generated.Nil, err error) {
+func (service *Service) Stop(
+	context.Context,
+	*generated.Nil,
+) (n *generated.Nil, err error) {
 	if service.jobCancelToken == nil {
 		return n, fmt.Errorf("Runner is not currently running a job")
 	}
@@ -107,36 +121,50 @@ func (service *Service) Stop(context.Context, *generated.Nil) (n *generated.Nil,
 	return
 }
 
-// Status of the Runner's current Job
-func (service *Service) Status(context.Context, *generated.Nil) (status *generated.RunnerStatus, err error) {
-	return &generated.RunnerStatus{
-		CurrentJobName:     service.CurrentJobName,
-		CurrentCommandName: service.CurrentCommandName,
-	}, err
+// WaitForJob to finish
+func (service *Service) WaitForJob() (done chan bool) {
+	return service.jobCancelToken
+}
+
+// Status of the Runner
+func (service *Service) Status(
+	context.Context,
+	*generated.Nil,
+) (status *generated.RunnerStatus, err error) {
+	return &service.status, err
 }
 
 // Info about the Runner
-func (service *Service) Info(context.Context, *generated.Nil) (info *generated.RunnerInfo, err error) {
+func (service *Service) Info(
+	context.Context,
+	*generated.Nil,
+) (info *generated.RunnerInfo, err error) {
 	return &service.info, err
 }
 
 // NewService returns a new Service
-func NewService() (service *Service, err error) {
+func NewService(address string) (service *Service, err error) {
 	service = &Service{
+		Name: Name,
+		status: generated.RunnerStatus{
+			CurrentJobName:     "",
+			CurrentCommandName: "",
+		},
 		info: generated.RunnerInfo{
 			Attributes: &generated.Attributes{},
+			Address:    address,
 		},
 	}
 
 	arch, found := generated.Attributes_Arch_value[runtime.GOARCH]
 	if !found {
-		return service, fmt.Errorf("Could not obtain Runner Arch")
+		return nil, fmt.Errorf("Could not obtain Runner Arch")
 	}
 	service.info.Attributes.Arch = generated.Attributes_Arch(arch)
 
 	platform, found := generated.Attributes_Platform_value[runtime.GOOS]
 	if !found {
-		return service, fmt.Errorf("Could not obtain Runner Platform")
+		return nil, fmt.Errorf("Could not obtain Runner Platform")
 	}
 	service.info.Attributes.Platform = generated.Attributes_Platform(platform)
 

@@ -8,7 +8,7 @@ import (
 )
 
 func TestRunnerInfo(t *testing.T) {
-	runner, err := NewService()
+	runner, err := NewService("")
 	if err != nil {
 		t.Errorf("%v", err)
 	}
@@ -44,7 +44,7 @@ func TestRunnerInfo(t *testing.T) {
 }
 
 func TestRunnerStatusNoJob(t *testing.T) {
-	runner, err := NewService()
+	runner, err := NewService("")
 	if err != nil {
 		t.Errorf("%v", err)
 	}
@@ -81,7 +81,7 @@ func TestStartJob(t *testing.T) {
 		Env: []string{"TEST=true", "FOO=BAR"},
 	}
 
-	runner, err := NewService()
+	runner, err := NewService("")
 	if err != nil {
 		t.Errorf("%v", err)
 	}
@@ -92,7 +92,7 @@ func TestStartJob(t *testing.T) {
 }
 
 func TestStopNoJob(t *testing.T) {
-	runner, err := NewService()
+	runner, err := NewService("")
 	if err != nil {
 		t.Errorf("%v", err)
 	}

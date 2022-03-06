@@ -10,7 +10,13 @@ import (
 )
 
 // Main wraps the main functionality of all servers
-func Main(outlog *log.Logger, errlog *log.Logger, listener net.Listener, grpcServer *grpc.Server) (err error) {
+func Main(
+	outlog *log.Logger,
+	errlog *log.Logger,
+	listener net.Listener,
+	grpcServer *grpc.Server,
+	serviceName string,
+) (err error) {
 	interrupt := make(chan os.Signal, 1)
 	signal.Notify(interrupt, os.Interrupt, os.Kill)
 
@@ -18,18 +24,18 @@ func Main(outlog *log.Logger, errlog *log.Logger, listener net.Listener, grpcSer
 	go func() { served <- grpcServer.Serve(listener) }()
 	defer close(served)
 
-	outlog.Printf("Service running: %v", listener.Addr())
+	outlog.Printf("%v running: %v", serviceName, listener.Addr())
 
 	interrupted := false
 	for !interrupted {
 		select {
 		case err = <-served:
-			outlog.Printf("Server stopped: %v\n", err)
+			outlog.Printf("%v stopped: %v\n", serviceName, err)
 		case done := <-interrupt:
-			outlog.Printf("Service stop requested: %v\n", done)
-			outlog.Printf("Gracefully shutting down server...\n")
+			outlog.Printf("%v stop requested: %v\n", serviceName, done)
+			outlog.Printf("Gracefully shutting down %v...\n", serviceName)
 			grpcServer.GracefulStop()
-			outlog.Printf("Gracefully shut down server!\n")
+			outlog.Printf("Gracefully shut down %v!\n", serviceName)
 		}
 		interrupted = true
 	}
