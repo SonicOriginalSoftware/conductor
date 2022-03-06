@@ -32,7 +32,7 @@ func setupQueueService(t *testing.T) (service *queue.Service, mainErr chan error
 
 	generated.RegisterQueueServer(grpcServer, service)
 
-	mainErr = make(chan error)
+	mainErr = make(chan error, 1)
 	go func() {
 		if err = lib.Main(outlog, errlog, listener, grpcServer); err != nil {
 			mainErr <- err
@@ -60,7 +60,7 @@ func setupRunnerService(t *testing.T) (service *runner.Service, mainErr chan err
 
 	generated.RegisterRunnerServer(grpcServer, service)
 
-	mainErr = make(chan error)
+	mainErr = make(chan error, 1)
 	go func() {
 		if err = lib.Main(outlog, errlog, listener, grpcServer); err != nil {
 			mainErr <- err
@@ -95,6 +95,7 @@ func TestPipelinePushJob(t *testing.T) {
 
 	queue.Push(context.Background(), testPipeline)
 
+	// FIXME What am I waiting on here?
 	select {
 	case err := <-runnerErr:
 		t.Fatalf("%v", err)
@@ -104,6 +105,7 @@ func TestPipelinePushJob(t *testing.T) {
 		break
 	}
 
+	t.Logf("Able to push pipeline with single job!")
 }
 
 func TestPipelinePushJobs(t *testing.T) {
@@ -136,4 +138,6 @@ func TestPipelinePushJobs(t *testing.T) {
 
 	_, _ = setupRunnerService(t)
 	_, _ = setupQueueService(t)
+
+	t.Logf("Able to push pipeline with multiple job!")
 }
