@@ -50,7 +50,20 @@ func (service *Service) Push(
 			continue
 		}
 
-		// TODO Verify Runner Attributes
+		// Verify Runner LibC Compatibility
+		if pipeline.Libc != generated.LibC__libc && pipeline.Libc != runnerInfo.Attributes.Libc {
+			// TODO ERROR HERE
+		}
+
+		// Verify Runner Arch compatibility
+		if pipeline.Arch != generated.LibC__libc && pipeline.Libc != runnerInfo.Attributes.Libc {
+			// TODO ERROR HERE
+		}
+
+		// Verify Runner Platform compatibility
+		if pipeline.Platform != generated.LibC__libc && pipeline.Libc != runnerInfo.Attributes.Libc {
+			// TODO ERROR HERE
+		}
 
 		// TODO Verify Runner Status
 		// if runnerInfo.Attributes.Arch ==

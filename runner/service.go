@@ -156,26 +156,26 @@ func NewService(address string) (service *Service, err error) {
 		},
 	}
 
-	arch, found := generated.Attributes_Arch_value[runtime.GOARCH]
+	arch, found := generated.Arch_value[runtime.GOARCH]
 	if !found {
 		return nil, fmt.Errorf("Could not obtain Runner Arch")
 	}
-	service.info.Attributes.Arch = generated.Attributes_Arch(arch)
+	service.info.Attributes.Arch = generated.Arch(arch)
 
-	platform, found := generated.Attributes_Platform_value[runtime.GOOS]
+	platform, found := generated.Platform_value[runtime.GOOS]
 	if !found {
 		return nil, fmt.Errorf("Could not obtain Runner Platform")
 	}
-	service.info.Attributes.Platform = generated.Attributes_Platform(platform)
+	service.info.Attributes.Platform = generated.Platform(platform)
 
 	switch runtime.GOOS {
 	case "windows":
-		service.info.Attributes.Libc = generated.Attributes_msvc
+		service.info.Attributes.Libc = generated.LibC_msvc
 	case "darwin":
-		service.info.Attributes.Libc = generated.Attributes_libSystem
+		service.info.Attributes.Libc = generated.LibC_libSystem
 	case "linux":
 		// FIXME Don't assume glibc - check for musl
-		service.info.Attributes.Libc = generated.Attributes_glibc
+		service.info.Attributes.Libc = generated.LibC_glibc
 	}
 
 	return

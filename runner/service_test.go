@@ -18,24 +18,24 @@ func TestRunnerInfo(t *testing.T) {
 		t.Errorf("%v", err)
 	}
 
-	if info.Attributes.Arch != generated.Attributes_Arch(generated.Attributes_Arch_value[runtime.GOARCH]) {
+	if info.Attributes.Arch != generated.Arch(generated.Arch_value[runtime.GOARCH]) {
 		t.Errorf("Runner Info Arch not consistent with Machine Arch")
 		t.FailNow()
 	}
 
-	if info.Attributes.Platform != generated.Attributes_Platform(generated.Attributes_Platform_value[runtime.GOOS]) {
+	if info.Attributes.Platform != generated.Platform(generated.Platform_value[runtime.GOOS]) {
 		t.Errorf("Runner Info Platform not consistent with Machine OS")
 		t.FailNow()
 	}
 
-	libc := generated.Attributes_musl
+	libc := generated.LibC_musl
 	switch runtime.GOOS {
 	case "windows":
-		libc = generated.Attributes_msvc
+		libc = generated.LibC_msvc
 	case "darwin":
-		libc = generated.Attributes_libSystem
+		libc = generated.LibC_libSystem
 	case "linux":
-		libc = generated.Attributes_glibc
+		libc = generated.LibC_glibc
 	}
 	if info.Attributes.Libc != libc {
 		t.Errorf("Runner Info LibC not consistent with Machine LibC")
